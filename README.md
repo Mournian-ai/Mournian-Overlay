@@ -151,7 +151,7 @@ Double-click → tray icon appears → right-click for menu.
 
 ## 📜 License
 
-MIT (or your choice).
+MIT
 
 ---
 
@@ -163,3 +163,4 @@ MIT (or your choice).
 * [pystray](https://github.com/moses-palmer/pystray)
 * [Pillow](https://python-pillow.org/)
 * Twitch EventSub docs: [https://dev.twitch.tv/docs/eventsub/](https://dev.twitch.tv/docs/eventsub/)
+
