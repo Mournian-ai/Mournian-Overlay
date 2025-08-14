@@ -34,7 +34,9 @@ Quick Start (from source)
 Clone & install deps:
 
 git clone https://github.com/Mournian-ai/Mournian-Overlay.git
+
 cd Mournian-Overlay
+
 python -m venv venv
 
 # Windows PowerShell:
@@ -61,3 +63,4 @@ Or override channel: http://localhost:8000/overlay?channel=yourname
 Size: match the canvas (overlay positions are absolute).
 Stats Dashboard
 http://localhost:8000/stats (live status, session ID, sub-topic status, recent events, total bits).
+
