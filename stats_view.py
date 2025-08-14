@@ -150,6 +150,7 @@ def build_stats_html(store: Store) -> str:
             <tr><th>channel.follow</th><td id="st_follow"><span class="dot" id="dot_follow"></span><span id="txt_follow">checking…</span></td></tr>
             <tr><th>channel.subscribe</th><td id="st_subscribe"><span class="dot" id="dot_subscribe"></span><span id="txt_subscribe">checking…</span></td></tr>
             <tr><th>channel.cheer</th><td id="st_cheer"><span class="dot" id="dot_cheer"></span><span id="txt_cheer">checking…</span></td></tr>
+            <tr><th>channel.raid</th><td id="st_raid"><span class="dot" id="dot_raid"></span><span id="txt_raid">checking…</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -216,9 +217,11 @@ def build_stats_html(store: Store) -> str:
       const dotFollow = document.getElementById('dot_follow');
       const dotSub = document.getElementById('dot_subscribe');
       const dotCheer = document.getElementById('dot_cheer');
+      const dotRaid = document.getElementById('dot_raid');
       const txtFollow = document.getElementById('txt_follow');
       const txtSub = document.getElementById('txt_subscribe');
       const txtCheer = document.getElementById('txt_cheer');
+      const txtRaid = document.getElementById('txt_raid');
 
       function setDot(el, ok) {{
         el.style.background = ok ? "var(--good)" : "var(--warn)";
@@ -254,6 +257,7 @@ def build_stats_html(store: Store) -> str:
           setDot(dotFollow, !!subs.follow); txtFollow.textContent = subs.follow ? 'subscribed' : 'pending';
           setDot(dotSub, !!subs.subscribe); txtSub.textContent = subs.subscribe ? 'subscribed' : 'pending';
           setDot(dotCheer, !!subs.cheer); txtCheer.textContent = subs.cheer ? 'subscribed' : 'pending';
+          setDot(dotRaid, !!subs.raid); txtRaid.textContent = subs.raid ? 'subscribed' : 'pending';
         }} catch {{
           badge.textContent = 'Status: Unknown';
           badge.style.color = 'var(--warn)';

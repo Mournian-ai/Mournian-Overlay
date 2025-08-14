@@ -117,6 +117,7 @@ SUB_VERSIONS = {
     "channel.follow": "2",   # requires moderator_user_id condition + scope
     "channel.subscribe": "1",
     "channel.cheer": "1",
+    "channel.raid": "1",
 }
 
 async def subscribe(token: str, session_id: str, sub_type: str, condition: Dict[str, str]):
@@ -199,7 +200,7 @@ async def connect_eventsub_ws(latest: Latest):
                     print(f"[EventSub] session_id: {session_id} {changed}")
 
                     _worker_status["session_id"] = session_id
-                    _worker_status["subs"] = {"follow": False, "subscribe": False, "cheer": False}
+                    _worker_status["subs"] = {"follow": False, "subscribe": False, "cheer": False, "raid": False}
 
                     await subscribe(token_state.access_token, session_id, "channel.follow",
                                     {"broadcaster_user_id": broadcaster_id, "moderator_user_id": moderator_id})
@@ -212,6 +213,10 @@ async def connect_eventsub_ws(latest: Latest):
                     await subscribe(token_state.access_token, session_id, "channel.cheer",
                                     {"broadcaster_user_id": broadcaster_id})
                     _worker_status["subs"]["cheer"] = True
+
+                    await subscribe(token_state.access_token, session_id, "channel.raid",
+                                    {"to_broadcaster_user_id": broadcaster_id})
+                    _worker_status["subs"]["raid"] = True
 
                     print("[EventSub] Subscriptions created")
 
@@ -269,6 +274,13 @@ async def connect_eventsub_ws(latest: Latest):
                             _store.save()
                             await _broadcast({"op": "latest_update", "kind": "bits", "data": latest.bits})
                             await _broadcast({"op": "alert", "kind": "bits", "data": latest.bits})
+
+                        elif etype == "channel.raid":
+                            raid = {
+                                "from_broadcaster_user_name": event.get("from_broadcaster_user_name"),
+                                "viewers": event.get("viewers"),
+                            }
+                            await _broadcast({"op": "alert", "kind": "raid", "data": raid})
 
             except Exception as e:
                 print(f"[EventSub] Error: {e}")

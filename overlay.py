@@ -10,7 +10,8 @@ def build_overlay_html(settings: Settings, override_channel: str = "") -> str:
   <!-- Local tmi.js served by FastAPI /static -->
   <script src="/static/tmi.min.js"></script>
   <style>
-    html, body {{ margin:0; padding:0; background:transparent; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI; }}
+    :root {{ --text-color: white; --font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI; }}
+    html, body {{ margin:0; padding:0; background:transparent; font-family: var(--font-family); }}
     .container {{ position: relative; width: 100vw; height: 100vh; overflow: hidden; }}
 
     /* Rotating latest bar (bottom-left) */
@@ -19,7 +20,7 @@ def build_overlay_html(settings: Settings, override_channel: str = "") -> str:
       min-width: 360px; max-width: 560px;
       padding: 14px 18px; border-radius: 14px;
       background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
-      color: white; line-height: 1.4;
+      color: var(--text-color); line-height: 1.4;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     }}
     .label {{ opacity: 0.7; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }}
@@ -30,7 +31,7 @@ def build_overlay_html(settings: Settings, override_channel: str = "") -> str:
     /* Alert pop (center-top) */
     .alert {{
       position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.06); color: white; padding: 12px 18px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); color: var(--text-color); padding: 12px 18px; border-radius: 12px;
       font-size: 26px; font-weight: 800; border: 1px solid rgba(255,255,255,0.15);
       opacity: 0; pointer-events: none;
     }}
@@ -49,7 +50,7 @@ def build_overlay_html(settings: Settings, override_channel: str = "") -> str:
       display: flex; flex-direction: column;
       background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
       border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      color: #efeff1; overflow: hidden;
+      color: var(--text-color); overflow: hidden;
     }}
     .chatHeader {{
       padding: 8px 12px; font-size: 14px; letter-spacing: .5px; text-transform: uppercase;
@@ -99,12 +100,27 @@ def build_overlay_html(settings: Settings, override_channel: str = "") -> str:
     // --- Rotating latest ---
     const rotLabel = document.getElementById('rotLabel');
     const rotValue = document.getElementById('rotValue');
-    const alertBox = document.getElementById('alert');
-    const latest = {{ follow:null, sub:null, bits:null }};
-    const rotation = ["follow","sub","bits"];
-    let idx = 0;
+      const alertBox = document.getElementById('alert');
+      const custom = JSON.parse(localStorage.getItem('overlayCustom') || "{{}}" );
+      const latest = {{ follow:null, sub:null, bits:null }};
+      const rotation = ["follow","sub","bits"];
+      let idx = 0;
 
-    function renderRotation(){{
+      function applyCustom(){{
+        if (custom.fontFamily) document.documentElement.style.setProperty('--font-family', custom.fontFamily);
+        if (custom.textColor) document.documentElement.style.setProperty('--text-color', custom.textColor);
+        if (custom.show && custom.show.rotator === false) document.querySelector('.latestBar').style.display='none';
+        if (custom.show && custom.show.chat === false) document.querySelector('.chatBox').style.display='none';
+        if (custom.show && custom.show.alert === false) alertBox.style.display='none';
+        if (custom.positions){{
+          const p = custom.positions.rotator; if(p){{ const el=document.querySelector('.latestBar'); el.style.left=p.x+'px'; el.style.top=p.y+'px'; el.style.bottom=''; }}
+          const c = custom.positions.chat; if(c){{ const el=document.querySelector('.chatBox'); el.style.left=c.x+'px'; el.style.top=c.y+'px'; el.style.right=''; el.style.bottom=''; }}
+          const a = custom.positions.alert; if(a){{ alertBox.style.left=a.x+'px'; alertBox.style.top=a.y+'px'; alertBox.style.transform=''; }}
+        }}
+      }}
+      applyCustom();
+
+      function renderRotation(){{
       const kind = rotation[idx % rotation.length]; idx++;
       let label = "Latest " + (kind === "bits" ? "Bits" : (kind === "sub" ? "Sub" : "Follow"));
       let val = "—"; const d = latest[kind];
@@ -119,17 +135,24 @@ def build_overlay_html(settings: Settings, override_channel: str = "") -> str:
       rotLabel.textContent = label; rotValue.textContent = val;
     }}
 
-    function showAlert(kind, data){{
-      let text = "";
-      if (kind === "follow") text = `💜 ${{data.user_name || "Someone"}} followed!`;
-      if (kind === "sub") {{
-        const tier = data.tier ? ("T" + (parseInt(data.tier,10)/1000)) : "";
-        text = `⭐ ${{data.user_name || "Someone"}} subscribed ${{tier}}${{data.is_gift ? " (gift)" : ""}}!`;
+      function playSound(kind){{
+        const url = custom.sounds && custom.sounds[kind];
+        if (url){{ try {{ new Audio(url).play(); }} catch(e){{}} }}
       }}
-      if (kind === "bits") text = `💎 ${{data.user_name || "Anonymous"}} cheered ${{data.bits}} bits!`;
-      alertBox.textContent = text;
-      alertBox.classList.remove('show'); void alertBox.offsetWidth; alertBox.classList.add('show');
-    }}
+
+      function showAlert(kind, data){{
+        let text = "";
+        if (kind === "follow") text = `💜 ${{data.user_name || "Someone"}} followed!`;
+        if (kind === "sub") {{
+          const tier = data.tier ? ("T" + (parseInt(data.tier,10)/1000)) : "";
+          text = `⭐ ${{data.user_name || "Someone"}} subscribed ${{tier}}${{data.is_gift ? " (gift)" : ""}}!`;
+        }}
+        if (kind === "bits") text = `💎 ${{data.user_name || "Anonymous"}} cheered ${{data.bits}} bits!`;
+        if (kind === "raid") text = `🚀 ${{data.from_broadcaster_user_name || "Someone"}} raided with ${{data.viewers || 0}} viewers!`;
+        alertBox.textContent = text;
+        alertBox.classList.remove('show'); void alertBox.offsetWidth; alertBox.classList.add('show');
+        playSound(kind);
+      }}
 
     setInterval(renderRotation, {settings.rotation_ms});
     renderRotation();

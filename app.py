@@ -123,6 +123,10 @@ def overlay(request: Request, channel: str | None = None):
 def stats_page():
     return HTMLResponse(build_stats_html(store))
 
+@app.get("/customizer")
+def customizer_page():
+    return HTMLResponse(CUSTOMIZER_HTML)
+
 # ---------------- Admin UI ----------------
 ADMIN_HTML = """
 <!doctype html>
@@ -150,6 +154,7 @@ ADMIN_HTML = """
   <h1>Overlay Admin</h1>
 
   <p><a class="btnlink" href="/stats">Open the Stats page →</a></p>
+  <p><a class="btnlink" href="/customizer">Open the Customizer →</a></p>
 
   <div class="section">
     <h2>1) Twitch App Setup</h2>
@@ -228,6 +233,95 @@ ADMIN_HTML = """
   <div class="section">
     <h2>4) Use It in OBS</h2>
     <p>Add a <b>Browser Source</b> in OBS → URL: <span class="code">http://localhost:8000/overlay</span>. Override channel with <span class="code">?channel=yourname</span> if needed.</p>
+</body>
+</html>
+"""
+
+CUSTOMIZER_HTML = """
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Overlay Customizer</title>
+  <style>
+    body { margin:0; display:flex; height:100vh; font-family: ui-sans-serif, system-ui, -apple-system; }
+    .canvas { flex:1; background:#222; position:relative; overflow:hidden; }
+    .draggable { position:absolute; cursor:move; user-select:none; padding:8px 12px; border:1px dashed #888; color:#fff; }
+    .sidebar { width:260px; background:#f3f4f6; padding:12px; box-sizing:border-box; overflow-y:auto; }
+    label { display:block; margin-top:8px; }
+    input[type="text"], input[type="color"] { width:100%; padding:4px; box-sizing:border-box; }
+    button { margin-top:12px; padding:8px 12px; border-radius:8px; border:0; background:#6d28d9; color:white; font-weight:700; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="canvas" id="canvas">
+    <div id="alert" class="draggable">Alert</div>
+    <div id="rotator" class="draggable">Rotator</div>
+    <div id="chat" class="draggable">Chat</div>
+  </div>
+  <div class="sidebar">
+    <h3>Options</h3>
+    <label><input type="checkbox" id="showAlert" checked/> Show Alert</label>
+    <label><input type="checkbox" id="showRotator" checked/> Show Rotator</label>
+    <label><input type="checkbox" id="showChat" checked/> Show Chat</label>
+    <label>Text Color <input type="color" id="textColor" value="#ffffff"/></label>
+    <label>Font Family <input type="text" id="fontFamily" placeholder="e.g. Arial"/></label>
+    <h4>Alert Sounds</h4>
+    <label>Follow <input type="text" id="soundFollow" placeholder="URL"/></label>
+    <label>Sub <input type="text" id="soundSub" placeholder="URL"/></label>
+    <label>Bits <input type="text" id="soundBits" placeholder="URL"/></label>
+    <label>Raid <input type="text" id="soundRaid" placeholder="URL"/></label>
+    <button id="saveBtn" type="button">Save</button>
+  </div>
+
+<script>
+  function makeDrag(id){
+    const el=document.getElementById(id);
+    let drag=false,offX=0,offY=0;
+    el.addEventListener('mousedown',e=>{drag=true;offX=e.offsetX;offY=e.offsetY;});
+    window.addEventListener('mousemove',e=>{ if(!drag) return; el.style.left=(e.pageX-offX)+'px'; el.style.top=(e.pageY-offY)+'px'; });
+    window.addEventListener('mouseup',()=>{drag=false;});
+  }
+  ['alert','rotator','chat'].forEach(makeDrag);
+
+  function load(){
+    const data=JSON.parse(localStorage.getItem('overlayCustom')||'{}');
+    if(data.positions){
+      for (const k in data.positions){ const p=data.positions[k]; const el=document.getElementById(k); if(p && el){ el.style.left=p.x+'px'; el.style.top=p.y+'px'; }}
+    }
+    if(data.show){
+      showAlert.checked = data.show.alert !== false;
+      showRotator.checked = data.show.rotator !== false;
+      showChat.checked = data.show.chat !== false;
+    }
+    if(data.textColor) textColor.value = data.textColor;
+    if(data.fontFamily) fontFamily.value = data.fontFamily;
+    if(data.sounds){
+      soundFollow.value = data.sounds.follow || '';
+      soundSub.value = data.sounds.sub || '';
+      soundBits.value = data.sounds.bits || '';
+      soundRaid.value = data.sounds.raid || '';
+    }
+  }
+
+  function save(){
+    const data={
+      positions:{
+        alert:{ x:parseInt(document.getElementById('alert').style.left)||0, y:parseInt(document.getElementById('alert').style.top)||0 },
+        rotator:{ x:parseInt(document.getElementById('rotator').style.left)||0, y:parseInt(document.getElementById('rotator').style.top)||0 },
+        chat:{ x:parseInt(document.getElementById('chat').style.left)||0, y:parseInt(document.getElementById('chat').style.top)||0 }
+      },
+      show:{ alert:showAlert.checked, rotator:showRotator.checked, chat:showChat.checked },
+      textColor:textColor.value,
+      fontFamily:fontFamily.value,
+      sounds:{ follow:soundFollow.value, sub:soundSub.value, bits:soundBits.value, raid:soundRaid.value }
+    };
+    localStorage.setItem('overlayCustom', JSON.stringify(data));
+    alert('Saved');
+  }
+  document.getElementById('saveBtn').addEventListener('click', save);
+  load();
+</script>
 </body>
 </html>
 """
