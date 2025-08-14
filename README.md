@@ -2,8 +2,8 @@
 
 A self-contained Twitch overlay server for OBS:
 
-* **Overlay** with rotating “latest follow/sub/bits” and a **Twitch-like chat box** (emotes supported).
-* **EventSub (WebSocket)** listener for `channel.follow`, `channel.subscribe`, and `channel.cheer`.
+* **Overlay** with rotating “latest follow/sub/bits” and a **Twitch-like chat box** (emotes supported). Includes raid alerts and a **customizer page** to reposition elements, toggle them, change colors/fonts, and set alert sounds.
+* **EventSub (WebSocket)** listener for `channel.follow`, `channel.subscribe`, `channel.cheer`, and `channel.raid`.
 * **Pretty stats dashboard** with dark/light mode and live connection/subscription status.
 * **Admin UI** to configure credentials, appearance, and OAuth.
 * **Windows tray app** (exe) with Open Admin/Stats, Restart EventSub/Server, and Quit.
